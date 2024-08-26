@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Interest Calculator</title>
+    <!-- Load Brython -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9.5/brython.min.js"></script>
+    <!-- CSS for styling -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+        #loanForm {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .option-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .option-container > div {
+            flex: 1;
+        }
+        .form-section {
+            margin-bottom: 20px;
+        }
+        .form-section h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        #results {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #results p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body onload="brython()">
+
+    <h1>Loan Interest Calculator</h1>
+    
+    <form id="loanForm">
+        <div class="form-group">
+            <label for="principal">Principal:</label>
+            <input type="number" id="principal" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="tenure">Tenure (years):</label>
+            <input type="number" id="tenure" required>
+        </div>
+
+        <div class="option-container">
+            <div class="form-section">
+                <h3>Option 1</h3>
+                <div class="form-group">
+                    <label for="interest_rate1">Interest Rate (%):</label>
+                    <input type="number" id="interest_rate1" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="prepayments1">Prepayments (comma-separated):</label>
+                    <input type="text" id="prepayments1" required>
+                </div>
+                <div class="form-group">
+                    <label for="charges_format1">Prepayment Charges Format:</label>
+                    <input type="text" id="charges_format1" placeholder="comma-separated ranges and rates, e.g., 13-24:4,25-36:3,37-72:0" required>
+                </div>
+                <div class="form-group">
+                    <label for="min_part_payment1">Minimum Part Payment:</label>
+                    <input type="number" id="min_part_payment1" required>
+                </div>
+                <div class="form-group">
+                    <label for="max_part_payment1">Maximum Part Payment:</label>
+                    <input type="number" id="max_part_payment1" required>
+                </div>
+                <div class="form-group">
+                    <label for="max_annual_prepayments1">Maximum Annual Prepayments:</label>
+                    <input type="number" id="max_annual_prepayments1" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Option 2</h3>
+                <div class="form-group">
+                    <label for="interest_rate2">Interest Rate (%):</label>
+                    <input type="number" id="interest_rate2" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="prepayments2">Prepayments (comma-separated):</label>
+                    <input type="text" id="prepayments2" required>
+                </div>
+                <div class="form-group">
+                    <label for="charges_format2">Prepayment Charges Format:</label>
+                    <input type="text" id="charges_format2" placeholder="comma-separated ranges and rates, e.g., 13-24:4,25-36:3,37-72:0" required>
+                </div>
+                <div class="form-group">
+                    <label for="min_part_payment2">Minimum Part Payment:</label>
+                    <input type="number" id="min_part_payment2" required>
+                </div>
+                <div class="form-group">
+                    <label for="max_part_payment2">Maximum Part Payment:</label>
+                    <input type="number" id="max_part_payment2" required>
+                </div>
+                <div class="form-group">
+                    <label for="max_annual_prepayments2">Maximum Annual Prepayments:</label>
+                    <input type="number" id="max_annual_prepayments2" required>
+                </div>
+            </div>
+        </div>
+        
+        <button type="button" id="calculateButton">Calculate Interest</button>
+    </form>
+
+    <div id="results">
+        <h2>Results</h2>
+        <p id="interest1">Total Interest for Option 1: </p>
+        <p id="interest2">Total Interest for Option 2: </p>
+    </div>
+
+    <!-- Python code using Brython -->
+    <script type="text/python">
+        from browser import document, alert
+
+        def parse_charges_format(format_str):
+            """Parses the charges format string into a dictionary."""
+            charges = {}
+            try:
+                entries = format_str.split(',')
+                for entry in entries:
+                    range_part, rate = entry.split(':')
+                    rate = float(rate)
+                    if '-' in range_part:
+                        start, end = range_part.split('-')
+                        start = int(start)
+                        if end == '':
+                            end = float('inf')  # No end value provided, use infinity
+                        else:
+                            end = int(end)
+                        charges[(start, end)] = rate
+                    else:
+                        start = int(range_part)
+                        charges[(start, float('inf'))] = rate
+            except ValueError:
+                alert("Error parsing the charges format. Please use the format: 13-24:4,25-36:3,37-72:0")
+            return charges
+
+        def get_prepayment_charge(tenure, charges):
+            """Determines the prepayment charge based on the tenure."""
+            for (start, end), rate in charges.items():
+                if start <= tenure <= end:
+                    return rate
+            return 0  # Default if no range matches
+
+        def calculate_interest(principal, interest_rate, tenure, prepayments, charges_format, min_part_payment, max_part_payment, max_annual_prepayments):
+            """Calculates total interest paid based on given parameters."""
+            balance = principal
+            total_interest = 0
+            prepayments_made = 0
+            annual_prepayments_made = 0
+            charges = parse_charges_format(charges_format)
+
+            for year, prepayment in enumerate(prepayments):
+                if prepayments_made >= max_annual_prepayments or prepayment == 0:
+                    continue
+
+                interest = balance * interest_rate
+                total_interest += interest
+                balance += interest
+
+                if annual_prepayments_made < max_annual_prepayments:
+                    adjusted_prepayment = max(min(prepayment, max_part_payment), min_part_payment)
+                    prepayment_charge = get_prepayment_charge(tenure, charges)
+                    total_interest += adjusted_prepayment * prepayment_charge / 100
+                    balance -= adjusted_prepayment
+                    prepayments_made += 1
+                    annual_prepayments_made += 1
+
+                if year % 12 == 0:
+                    annual_prepayments_made = 0
+
+            for remaining_year in range(year + 1, tenure):
+                interest = balance * interest_rate
+                total_interest += interest
+                balance += interest
+
+            return total_interest
+
+        def calculate(event):
+            """Handles the click event for calculating interest."""
+            try:
+                principal = float(document["principal"].value)
+                interest_rate1 = float(document["interest_rate1"].value) / 100
+                interest_rate2 = float(document["interest_rate2"].value) / 100
+                tenure = int(document["tenure"].value) * 12  # Convert years to months
+
+                prepayments1 = list(map(float, document["prepayments1"].value.split(',')))
+                prepayments2 = list(map(float, document["prepayments2"].value.split(',')))
+
+                charges_format1 = document["charges_format1"].value
+                charges_format2 = document["charges_format2"].value
+
+                min_part_payment1 = float(document["min_part_payment1"].value)
+                max_part_payment1 = float(document["max_part_payment1"].value)
+                max_annual_prepayments1 = int(document["max_annual_prepayments1"].value)
+
+                min_part_payment2 = float(document["min_part_payment2"].value)
+                max_part_payment2 = float(document["max_part_payment2"].value)
+                max_annual_prepayments2 = int(document["max_annual_prepayments2"].value)
+
+                total_interest1 = calculate_interest(principal, interest_rate1, tenure, prepayments1, charges_format1, min_part_payment1, max_part_payment1, max_annual_prepayments1)
+                total_interest2 = calculate_interest(principal, interest_rate2, tenure, prepayments2, charges_format2, min_part_payment2, max_part_payment2, max_annual_prepayments2)
+
+                document["interest1"].text = f"Total Interest for Option 1: {total_interest1:.2f}"
+                document["interest2"].text = f"Total Interest for Option 2: {total_interest2:.2f}"
+
+            except ValueError:
+                alert("Please enter valid values for all fields.")
+
+        document["calculateButton"].bind("click", calculate)
+    </script>
+</body>
+</html>
