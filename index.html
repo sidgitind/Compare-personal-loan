@@ -1,206 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loan Interest Calculator</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Load Brython -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9.5/brython.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.11.1/brython.min.js"></script>
+    <style>
+        /* CSS Styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #loanForm {
+            width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+            float: left;
+            width: 48%;
+            margin-right: 2%;
+        }
+
+        .form-section h3 {
+            margin-top: 0;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-section input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #results {
+            margin: 20px auto;
+            text-align: center;
+            clear: both;
+        }
+
+        #charts {
+            width: 1200px;
+            margin: 20px auto;
+        }
+
+        .chart-container {
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+        }
+    </style>
 </head>
+
 <body onload="brython()">
-
     <h1>Loan Interest Calculator</h1>
-    
-    <form id="loanForm">
-        <div class="form-group">
-            <label for="principal">Principal:</label>
-            <input type="number" id="principal" required>
-            <small>Enter the initial amount of the loan.</small>
-        </div>
-        
-        <div class="form-group">
+    <div id="loanForm">
+        <!-- General Section -->
+        <div class="form-section" style="width: 100%;">
+            <h3>General Information</h3>
+            <label for="principal">Principal Amount:</label>
+            <input type="number" id="principal" step="0.01" placeholder="Enter principal amount">
             <label for="tenure">Tenure (years):</label>
-            <input type="number" id="tenure" required>
-            <small>Enter the loan duration in years.</small>
+            <input type="number" id="tenure" step="1" placeholder="Enter tenure in years">
         </div>
 
-        <div class="option-container">
-            <div class="form-section">
-                <h3>Option 1</h3>
-                <div class="form-group">
-                    <label for="interest_rate1">Interest Rate (%):</label>
-                    <input type="number" id="interest_rate1" step="0.01" required>
-                    <small>Enter the annual interest rate for Option 1.</small>
-                </div>
-                <div class="form-group">
-                    <label for="prepayments1">Part Payments (comma-separated):</label>
-                    <input type="text" id="prepayments1" required>
-                    <small>Enter the part payment amounts as a comma-separated list.</small>
-                </div>
-                <div class="form-group">
-                    <label for="charges1">Part Payment Charges:</label>
-                    <input type="text" id="charges1" placeholder="comma-separated ranges and rates, e.g., 13-24:4,25-36:3,37-72:2" required>
-                    <small>These are the charges of the bank if you make a part payment based on how old the loan is.</small>
-                </div>
-                <div class="form-group">
-                    <label for="min_part_payment1">Minimum Part Payment:</label>
-                    <input type="number" id="min_part_payment1" required>
-                    <small>Enter the minimum amount required for a part payment.</small>
-                </div>
-                <div class="form-group">
-                    <label for="max_part_payment1">Maximum Part Payment:</label>
-                    <input type="number" id="max_part_payment1" required>
-                    <small>Enter the maximum amount allowed for a part payment.</small>
-                </div>
-                <div class="form-group">
-                    <label for="max_annual_prepayments1">Maximum Annual Part Payments:</label>
-                    <input type="number" id="max_annual_prepayments1" required>
-                    <small>Enter the maximum number of part payments allowed per year.</small>
-                </div>
-            </div>
-
-            <div class="form-section">
-                <h3>Option 2</h3>
-                <div class="form-group">
-                    <label for="interest_rate2">Interest Rate (%):</label>
-                    <input type="number" id="interest_rate2" step="0.01" required>
-                    <small>Enter the annual interest rate for Option 2.</small>
-                </div>
-                <div class="form-group">
-                    <label for="prepayments2">Part Payments (comma-separated):</label>
-                    <input type="text" id="prepayments2" required>
-                    <small>Enter the part payment amounts as a comma-separated list.</small>
-                </div>
-                <div class="form-group">
-                    <label for="charges2">Part Payment Charges:</label>
-                    <input type="text" id="charges2" placeholder="comma-separated ranges and rates, e.g., 13-24:4,25-36:3,37-72:2" required>
-                    <small>These are the charges of the bank if you make a part payment based on how old the loan is.</small>
-                </div>
-                <div class="form-group">
-                    <label for="min_part_payment2">Minimum Part Payment:</label>
-                    <input type="number" id="min_part_payment2" required>
-                    <small>Enter the minimum amount required for a part payment.</small>
-                </div>
-                <div class="form-group">
-                    <label for="max_part_payment2">Maximum Part Payment:</label>
-                    <input type="number" id="max_part_payment2" required>
-                    <small>Enter the maximum amount allowed for a part payment.</small>
-                </div>
-                <div class="form-group">
-                    <label for="max_annual_prepayments2">Maximum Annual Part Payments:</label>
-                    <input type="number" id="max_annual_prepayments2" required>
-                    <small>Enter the maximum number of part payments allowed per year.</small>
-                </div>
-            </div>
+        <!-- Option 1 -->
+        <div class="form-section">
+            <h3>Option 1</h3>
+            <label for="interest_rate1">Interest Rate (%):</label>
+            <input type="number" id="interest_rate1" step="0.01" placeholder="Enter interest rate">
+            <label for="prepayments1">Prepayments (month:amount, e.g., 12:1000,24:2000):</label>
+            <input type="text" id="prepayments1" placeholder="Enter prepayment details">
+            <label for="charges_format1">Charges Format (e.g., 13-24:3,25-120:2):</label>
+            <input type="text" id="charges_format1" placeholder="Enter charges format">
+            <label for="min_part_payment1">Minimum Part Payment:</label>
+            <input type="number" id="min_part_payment1" step="0.01" placeholder="Enter minimum part payment">
+            <label for="max_part_payment1">Maximum Part Payment:</label>
+            <input type="number" id="max_part_payment1" step="0.01" placeholder="Enter maximum part payment">
+            <label for="min_prepayment_month1">Minimum Month for Prepayment:</label>
+            <input type="number" id="min_prepayment_month1" step="1" placeholder="Enter minimum month for prepayment">
         </div>
-        
-        <button type="button" id="calculateButton">Calculate Interest</button>
-    </form>
 
-    <div id="results">
-        <h2>Results</h2>
-        <p id="interest1">Total Interest for Option 1: </p>
-        <p id="interest2">Total Interest for Option 2: </p>
+        <!-- Option 2 -->
+        <div class="form-section">
+            <h3>Option 2</h3>
+            <label for="interest_rate2">Interest Rate (%):</label>
+            <input type="number" id="interest_rate2" step="0.01" placeholder="Enter interest rate">
+            <label for="prepayments2">Prepayments (month:amount, e.g., 12:1000,24:2000):</label>
+            <input type="text" id="prepayments2" placeholder="Enter prepayment details">
+            <label for="charges_format2">Charges Format (e.g., 13-24:3,25-120:2):</label>
+            <input type="text" id="charges_format2" placeholder="Enter charges format">
+            <label for="min_part_payment2">Minimum Part Payment:</label>
+            <input type="number" id="min_part_payment2" step="0.01" placeholder="Enter minimum part payment">
+            <label for="max_part_payment2">Maximum Part Payment:</label>
+            <input type="number" id="max_part_payment2" step="0.01" placeholder="Enter maximum part payment">
+            <label for="min_prepayment_month2">Minimum Month for Prepayment:</label>
+            <input type="number" id="min_prepayment_month2" step="1" placeholder="Enter minimum month for prepayment">
+        </div>
+
+        <button id="calculateButton">Calculate</button>
     </div>
 
-    <!-- Python code using Brython -->
+    <div id="results">
+        <p id="emi1">EMI for Option 1: </p>
+        <p id="interest1">Total Interest for Option 1: </p>
+        <p id="emi2">EMI for Option 2: </p>
+        <p id="interest2">Total Interest for Option 2: </p>
+    </div>
+    <div id="table-container"></div>
+    <div id="charts">
+        <div class="chart-container">
+            <h3>Interest Calculation</h3>
+            <canvas id="interestChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h3>Principal Repayment</h3>
+            <canvas id="repaymentChart"></canvas>
+        </div>
+    </div>
+
+
     <script type="text/python">
-        from browser import document, alert
+        from browser import document, window, alert
 
-        def parse_charges_format(format_str):
-            """Parses the charges format string into a dictionary."""
-            charges = {}
-            try:
-                entries = format_str.split(',')
-                for entry in entries:
-                    range_part, rate = entry.split(':')
-                    rate = float(rate)
-                    if '-' in range_part:
-                        start, end = range_part.split('-')
-                        end = int(end)
-                        charges[(int(start), end)] = rate
-                    else:
-                        start = int(range_part)
-                        charges[(start, float('inf'))] = rate
-            except ValueError:
-                alert("Error parsing the charges. Please use the format: 13-24:4,25-36:3,37-72:2")
-            return charges
+        def calculate_emi(principal, rate, tenure_years):
+            n = int(tenure_years * 12)
+            r = rate / (12 * 100)
+            if r == 0:
+                emi = principal / n
+            else:
+                emi = (principal * r * (1 + r) ** n) / ((1 + r) ** n - 1)
+            return emi
 
-        def get_part_payment_charge(tenure, charges):
-            """Determines the part payment charge based on the tenure."""
-            for (start, end), rate in charges.items():
-                if start <= tenure <= end:
-                    return rate
-            return 0  # Default if no range matches
-
-        def calculate_interest(principal, interest_rate, tenure, part_payments, charges, min_part_payment, max_part_payment, max_annual_prepayments):
-            """Calculates total interest paid based on given parameters."""
-            balance = principal
+        def calculate_total_interest(principal, emi, tenure_years, prepayments):
+            n = int(tenure_years * 12)
+            monthly_interest_rate = emi / principal  # Monthly interest rate calculation
             total_interest = 0
-            part_payments_made = 0
-            annual_prepayments_made = 0
+            remaining_principal = principal
+            interest_over_time = []
+        
+            for month in range(1, n + 1):
+                # Check if there's a prepayment in the current month
+                if month in prepayments:
+                    prepayment = prepayments[month]
+                    if remaining_principal < prepayment:
+                        prepayment = remaining_principal
+                    remaining_principal -= prepayment
+                
+                # Calculate interest for the month and add it to total interest
+                interest_for_month = remaining_principal * monthly_interest_rate
+                total_interest += interest_for_month
+        
+                # Deduct principal portion of the EMI after interest
+                principal_payment = emi - interest_for_month
+                remaining_principal -= principal_payment
+                remaining_principal = max(remaining_principal, 0)  # Avoid negative principal
+        
+                # Append cumulative interest to the array
+                interest_over_time.append(total_interest)
+        
+                # Exit if the loan is fully repaid
+                if remaining_principal <= 0:
+                    break
+        
+            return total_interest, interest_over_time
+        
 
-            for year, part_payment in enumerate(part_payments):
-                if part_payments_made >= max_annual_prepayments or part_payment == 0:
-                    continue
+        def calculate_principal_repayment(principal, emi, tenure_years, prepayments):
+            n = int(tenure_years * 12)
+            remaining_principal = principal
+            principal_over_time = [principal]
 
-                interest = balance * interest_rate
-                total_interest += interest
-                balance += interest
+            for month in range(1, n + 1):
+                if remaining_principal <= 0:
+                    break
 
-                if annual_prepayments_made < max_annual_prepayments:
-                    adjusted_part_payment = max(min(part_payment, max_part_payment), min_part_payment)
-                    part_payment_charge = get_part_payment_charge(tenure, charges)
-                    total_interest += adjusted_part_payment * part_payment_charge / 100
-                    balance -= adjusted_part_payment
-                    part_payments_made += 1
-                    annual_prepayments_made += 1
+                if month in prepayments:
+                    prepayment = prepayments[month]
+                    if remaining_principal < prepayment:
+                        prepayment = remaining_principal
+                    remaining_principal -= prepayment
 
-                if year % 12 == 0:
-                    annual_prepayments_made = 0
+                remaining_principal -= emi
+                principal_over_time.append(remaining_principal if remaining_principal > 0 else 0)
 
-            for remaining_year in range(year + 1, tenure):
-                interest = balance * interest_rate
-                total_interest += interest
-                balance += interest
+            return principal_over_time
 
-            return total_interest
+        def parse_prepayments(prepayments_str):
+            prepayments = {}
+            if prepayments_str:
+                entries = prepayments_str.split(",")
+                for entry in entries:
+                    parts = entry.split(":")
+                    if len(parts) == 2:
+                        month = int(parts[0])
+                        amount = float(parts[1])
+                        prepayments[month] = amount
+            return prepayments
 
-        def calculateInterest(event):
-            """Handles the click event for calculating interest."""
+        def render_graphs(interest_data1, interest_data2, principal_data1, principal_data2):
+            interest_ctx = document["interestChart"].getContext("2d")
+            principal_ctx = document["repaymentChart"].getContext("2d")
+        
+            # Dynamically adjust x-axis labels for interest data
+            interest_labels = list(range(1, max(len(interest_data1), len(interest_data2)) + 1))
+            principal_labels = list(range(1, max(len(principal_data1), len(principal_data2)) + 1))
+        
+            # Interest Graph
+            window.Chart.new(interest_ctx, {
+                "type": "line",
+                "data": {
+                    "labels": interest_labels,
+                    "datasets": [
+                        {
+                            "label": "Interest Over Time - Option 1",
+                            "data": interest_data1,
+                            "borderColor": "rgba(255, 99, 132, 1)",
+                            "fill": False
+                        },
+                        {
+                            "label": "Interest Over Time - Option 2",
+                            "data": interest_data2,
+                            "borderColor": "rgba(75, 192, 192, 1)",
+                            "fill": False
+                        }
+                    ]
+                },
+                "options": {
+                    "responsive": True,
+                    "scales": {
+                        "x": {
+                            "display": True,
+                            "title": {
+                                "display": True,
+                                "text": "Month"
+                            }
+                        },
+                        "y": {
+                            "display": True,
+                            "title": {
+                                "display": True,
+                                "text": "Interest"
+                            }
+                        }
+                    }
+                }
+            })
+        
+            # Principal Repayment Graph
+            window.Chart.new(principal_ctx, {
+                "type": "line",
+                "data": {
+                    "labels": principal_labels,
+                    "datasets": [
+                        {
+                            "label": "Principal Remaining - Option 1",
+                            "data": principal_data1,
+                            "borderColor": "rgba(54, 162, 235, 1)",
+                            "fill": False
+                        },
+                        {
+                            "label": "Principal Remaining - Option 2",
+                            "data": principal_data2,
+                            "borderColor": "rgba(255, 206, 86, 1)",
+                            "fill": False
+                        }
+                    ]
+                },
+                "options": {
+                    "responsive": True,
+                    "scales": {
+                        "x": {
+                            "display": True,
+                            "title": {
+                                "display": True,
+                                "text": "Month"
+                            }
+                        },
+                        "y": {
+                            "display": True,
+                            "title": {
+                                "display": True,
+                                "text": "Principal"
+                            }
+                        }
+                    }
+                }
+            })
+        
+        
+        
+        def validate_inputs():
             try:
                 principal = float(document["principal"].value)
-                interest_rate1 = float(document["interest_rate1"].value) / 100
-                interest_rate2 = float(document["interest_rate2"].value) / 100
                 tenure = int(document["tenure"].value)
 
-                part_payments1 = list(map(float, document["prepayments1"].value.split(',')))
-                part_payments2 = list(map(float, document["prepayments2"].value.split(',')))
+                # Option 1
+                prepayment_months1 = [int(month) for month in parse_prepayments(document["prepayments1"].value).keys()]
+                if any(month > (tenure * 12) for month in prepayment_months1):
+                    alert("Error: Prepayment months for Option 1 exceed loan tenure.")
+                    return False
 
-                charges1 = parse_charges_format(document["charges1"].value)
-                charges2 = parse_charges_format(document["charges2"].value)
-
-                min_part_payment1 = float(document["min_part_payment1"].value)
-                max_part_payment1 = float(document["max_part_payment1"].value)
-                max_annual_prepayments1 = int(document["max_annual_prepayments1"].value)
-
-                min_part_payment2 = float(document["min_part_payment2"].value)
-                max_part_payment2 = float(document["max_part_payment2"].value)
-                max_annual_prepayments2 = int(document["max_annual_prepayments2"].value)
-
-                total_interest1 = calculate_interest(principal, interest_rate1, tenure, part_payments1, charges1, min_part_payment1, max_part_payment1, max_annual_prepayments1)
-                total_interest2 = calculate_interest(principal, interest_rate2, tenure, part_payments2, charges2, min_part_payment2, max_part_payment2, max_annual_prepayments2)
-
-                document["interest1"].text = f"Total Interest for Option 1: {total_interest1:.2f}"
-                document["interest2"].text = f"Total Interest for Option 2: {total_interest2:.2f}"
-
+                # Option 2
+                prepayment_months2 = [int(month) for month in parse_prepayments(document["prepayments2"].value).keys()]
+                if any(month > (tenure * 12) for month in prepayment_months2):
+                    alert("Error: Prepayment months for Option 2 exceed loan tenure.")
+                    return False
+        
+                return True
             except ValueError:
-                alert("Error in the input values. Please check your entries and try again.")
+                alert("Error: Please enter valid numerical values in all fields.")
+                return False
 
-        # Bind calculate function to button click
-        document["calculateButton"].bind("click", calculateInterest)
+                # Define generate_monthly_table_with_prepayments function with necessary prepayment data consideration
+            def generate_monthly_table_with_prepayments(emi_data1, emi_data2):
+                """
+                Generate an HTML table with EMI, interest, and principal details for both loan options.
+                """
+                table_html = "<table>"
+                table_html += """
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>EMI (Option 1)</th>
+                            <th>Interest (Option 1)</th>
+                            <th>Principal Remaining (Option 1)</th>
+                            <th>EMI (Option 2)</th>
+                            <th>Interest (Option 2)</th>
+                            <th>Principal Remaining (Option 2)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                """
+            
+                for month, (emi1, emi2) in enumerate(zip(emi_data1, emi_data2), start=1):
+                    table_html += f"""
+                        <tr>
+                            <td>{month}</td>
+                            <td>{emi1['emi']}</td>
+                            <td>{emi1['interest']}</td>
+                            <td>{emi1['principal_remaining']}</td>
+                            <td>{emi2['emi']}</td>
+                            <td>{emi2['interest']}</td>
+                            <td>{emi2['principal_remaining']}</td>
+                        </tr>
+                    """
+            
+                table_html += "</tbody></table>"
+                return table_html
+            
+
+        def on_calculate(event):
+            if not validate_inputs():
+                return
+
+            principal = float(document["principal"].value)
+            tenure = int(document["tenure"].value)
+            interest_rate1 = float(document["interest_rate1"].value)
+            interest_rate2 = float(document["interest_rate2"].value)
+
+            prepayments1 = parse_prepayments(document["prepayments1"].value)
+            prepayments2 = parse_prepayments(document["prepayments2"].value)
+
+            emi1 = calculate_emi(principal, interest_rate1, tenure)
+            emi2 = calculate_emi(principal, interest_rate2, tenure)
+
+           
+            total_interest1, interest_data1 = calculate_total_interest(principal, emi1, tenure, prepayments1)
+            total_interest2, interest_data2 = calculate_total_interest(principal, emi2, tenure, prepayments2)
+
+            principal_data1 = calculate_principal_repayment(principal, emi1, tenure, prepayments1)
+            principal_data2 = calculate_principal_repayment(principal, emi2, tenure, prepayments2)
+
+            # Update UI text
+            document["emi1"].text = f"EMI for Option 1: {emi1:.2f}"
+            document["interest1"].text = f"Total Interest for Option 1: {total_interest1:.2f}"
+            document["emi2"].text = f"EMI for Option 2: {emi2:.2f}"
+            document["interest2"].text = f"Total Interest for Option 2: {total_interest2:.2f}"
+            
+            
+            # Render both charts with both datasets
+            render_graphs(interest_data1, interest_data2, principal_data1, principal_data2)
+
+        document["calculateButton"].bind("click", on_calculate)
     </script>
-
 </body>
+
 </html>
