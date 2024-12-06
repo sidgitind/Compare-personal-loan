@@ -138,6 +138,8 @@
         <p id="emi2">EMI for Option 2: </p>
         <p id="interest2">Total Interest for Option 2: </p>
     </div>
+    <div id="penalty_list1"></div>
+    <div id="penalty_list2"></div>
     <div id="table-container"></div>
     <div id="charts">
         <div class="chart-container">
@@ -152,269 +154,357 @@
 
 
     <script type="text/python">
-        from browser import document, window, alert
-
-        def calculate_emi(principal, rate, tenure_years):
-            n = int(tenure_years * 12)
-            r = rate / (12 * 100)
-            if r == 0:
-                emi = principal / n
-            else:
-                emi = (principal * r * (1 + r) ** n) / ((1 + r) ** n - 1)
-            return emi
-
-        def calculate_total_interest(principal, emi, tenure_years, prepayments):
-            n = int(tenure_years * 12)
-            monthly_interest_rate = emi / principal  # Monthly interest rate calculation
-            total_interest = 0
-            remaining_principal = principal
-            interest_over_time = []
-        
-            for month in range(1, n + 1):
-                # Check if there's a prepayment in the current month
-                if month in prepayments:
-                    prepayment = prepayments[month]
-                    if remaining_principal < prepayment:
-                        prepayment = remaining_principal
-                    remaining_principal -= prepayment
+            from browser import document, window, alert
+    
+            def calculate_emi(principal, rate, tenure_years):
+                n = int(tenure_years * 12)
+                r = rate / (12 * 100)
+                if r == 0:
+                    emi = principal / n
+                else:
+                    emi = (principal * r * (1 + r) ** n) / ((1 + r) ** n - 1)
+                return emi
+    
+            def calculate_total_interest(principal, emi, tenure_years, prepayments):
+                n = int(tenure_years * 12)
+                monthly_interest_rate = emi / principal  # Monthly interest rate calculation
+                total_interest = 0
+                remaining_principal = principal
+                interest_over_time = []
+            
+                for month in range(1, n + 1):
+                    # Check if there's a prepayment in the current month
+                    if month in prepayments:
+                        prepayment = prepayments[month]
+                        if remaining_principal < prepayment:
+                            prepayment = remaining_principal
+                        remaining_principal -= prepayment
+                    
+                    # Calculate interest for the month and add it to total interest
+                    interest_for_month = remaining_principal * monthly_interest_rate
+                    total_interest += interest_for_month
+            
+                    # Deduct principal portion of the EMI after interest
+                    principal_payment = emi - interest_for_month
+                    remaining_principal -= principal_payment
+                    remaining_principal = max(remaining_principal, 0)  # Avoid negative principal
+            
+                    # Append cumulative interest to the array
+                    interest_over_time.append(total_interest)
+            
+                    # Exit if the loan is fully repaid
+                    if remaining_principal <= 0:
+                        break
+            
+                return total_interest, interest_over_time
+            
+    
+            def calculate_principal_repayment(principal, emi, tenure_years, prepayments):
+                n = int(tenure_years * 12)
+                remaining_principal = principal
+                principal_over_time = [principal]
+    
+                for month in range(1, n + 1):
+                    if remaining_principal <= 0:
+                        break
+    
+                    if month in prepayments:
+                        prepayment = prepayments[month]
+                        if remaining_principal < prepayment:
+                            prepayment = remaining_principal
+                        remaining_principal -= prepayment
+    
+                    remaining_principal -= emi
+                    principal_over_time.append(remaining_principal if remaining_principal > 0 else 0)
+    
+                return principal_over_time
+    
+            def parse_prepayments(prepayments_str):
+                prepayments = {}
+                if prepayments_str:
+                    entries = prepayments_str.split(",")
+                    for entry in entries:
+                        parts = entry.split(":")
+                        if len(parts) == 2:
+                            month = int(parts[0])
+                            amount = float(parts[1])
+                            prepayments[month] = amount
+                return prepayments
+    
+            def render_graphs(interest_data1, interest_data2, principal_data1, principal_data2):
+                interest_ctx = document["interestChart"].getContext("2d")
+                principal_ctx = document["repaymentChart"].getContext("2d")
+            
+                # Dynamically adjust x-axis labels for interest data
+                interest_labels = list(range(1, max(len(interest_data1), len(interest_data2)) + 1))
+                principal_labels = list(range(1, max(len(principal_data1), len(principal_data2)) + 1))
+            
+                # Interest Graph
+                window.Chart.new(interest_ctx, {
+                    "type": "line",
+                    "data": {
+                        "labels": interest_labels,
+                        "datasets": [
+                            {
+                                "label": "Interest Over Time - Option 1",
+                                "data": interest_data1,
+                                "borderColor": "rgba(255, 99, 132, 1)",
+                                "fill": False
+                            },
+                            {
+                                "label": "Interest Over Time - Option 2",
+                                "data": interest_data2,
+                                "borderColor": "rgba(75, 192, 192, 1)",
+                                "fill": False
+                            }
+                        ]
+                    },
+                    "options": {
+                        "responsive": True,
+                        "scales": {
+                            "x": {
+                                "display": True,
+                                "title": {
+                                    "display": True,
+                                    "text": "Month"
+                                }
+                            },
+                            "y": {
+                                "display": True,
+                                "title": {
+                                    "display": True,
+                                    "text": "Interest"
+                                }
+                            }
+                        }
+                    }
+                })
+            
+                # Principal Repayment Graph
+                window.Chart.new(principal_ctx, {
+                    "type": "line",
+                    "data": {
+                        "labels": principal_labels,
+                        "datasets": [
+                            {
+                                "label": "Principal Remaining - Option 1",
+                                "data": principal_data1,
+                                "borderColor": "rgba(54, 162, 235, 1)",
+                                "fill": False
+                            },
+                            {
+                                "label": "Principal Remaining - Option 2",
+                                "data": principal_data2,
+                                "borderColor": "rgba(255, 206, 86, 1)",
+                                "fill": False
+                            }
+                        ]
+                    },
+                    "options": {
+                        "responsive": True,
+                        "scales": {
+                            "x": {
+                                "display": True,
+                                "title": {
+                                    "display": True,
+                                    "text": "Month"
+                                }
+                            },
+                            "y": {
+                                "display": True,
+                                "title": {
+                                    "display": True,
+                                    "text": "Principal"
+                                }
+                            }
+                        }
+                    }
+                })
+            
+            def parse_charges_format(charges_str):
+                """
+                Parse the charges format field into a dictionary.
+                Format: "start-end:charge,..." e.g., "1-12:3,13-24:2"
+                """
+                charges = {}
+                if charges_str:
+                    entries = charges_str.split(",")
+                    for entry in entries:
+                        try:
+                            range_part, charge = entry.split(":")
+                            start, end = map(int, range_part.split("-"))
+                            charges[(start, end)] = float(charge)
+                        except ValueError:
+                            alert("Invalid format in charges format field. Use 'start-end:charge'.")
+                            return None
+                print(charges)        
+                return charges
+            def calculate_total_penalty(prepayments, charges):
+                penalties = []
+                for month, prepayment in prepayments.items():
+                    for (start, end), rate in charges.items():
+                        if start <= month <= end:
+                            penalty = prepayment * rate / 100
+                            penalties.append((month, penalty))
+                            break
+                return penalties
+            def validate_inputs():
+                try:
+                    principal = float(document["principal"].value)
+                    tenure = int(document["tenure"].value)
+                    tenure_months = tenure * 12  # Convert years to months
+    
+                    # Option 1
+                    prepayment_months1 = [int(month) for month in parse_prepayments(document["prepayments1"].value).keys()]
+                    if any(month > (tenure * 12) for month in prepayment_months1):
+                        alert("Error: Prepayment months for Option 1 exceed loan tenure.")
+                        return False
+    
+                    # Option 2
+                    prepayment_months2 = [int(month) for month in parse_prepayments(document["prepayments2"].value).keys()]
+                    if any(month > (tenure * 12) for month in prepayment_months2):
+                        alert("Error: Prepayment months for Option 2 exceed loan tenure.")
+                        return False
                 
-                # Calculate interest for the month and add it to total interest
-                interest_for_month = remaining_principal * monthly_interest_rate
-                total_interest += interest_for_month
-        
-                # Deduct principal portion of the EMI after interest
-                principal_payment = emi - interest_for_month
-                remaining_principal -= principal_payment
-                remaining_principal = max(remaining_principal, 0)  # Avoid negative principal
-        
-                # Append cumulative interest to the array
-                interest_over_time.append(total_interest)
-        
-                # Exit if the loan is fully repaid
-                if remaining_principal <= 0:
-                    break
-        
-            return total_interest, interest_over_time
-        
-
-        def calculate_principal_repayment(principal, emi, tenure_years, prepayments):
-            n = int(tenure_years * 12)
-            remaining_principal = principal
-            principal_over_time = [principal]
-
-            for month in range(1, n + 1):
-                if remaining_principal <= 0:
-                    break
-
-                if month in prepayments:
-                    prepayment = prepayments[month]
-                    if remaining_principal < prepayment:
-                        prepayment = remaining_principal
-                    remaining_principal -= prepayment
-
-                remaining_principal -= emi
-                principal_over_time.append(remaining_principal if remaining_principal > 0 else 0)
-
-            return principal_over_time
-
-        def parse_prepayments(prepayments_str):
-            prepayments = {}
-            if prepayments_str:
-                entries = prepayments_str.split(",")
-                for entry in entries:
-                    parts = entry.split(":")
-                    if len(parts) == 2:
-                        month = int(parts[0])
-                        amount = float(parts[1])
-                        prepayments[month] = amount
-            return prepayments
-
-        def render_graphs(interest_data1, interest_data2, principal_data1, principal_data2):
-            interest_ctx = document["interestChart"].getContext("2d")
-            principal_ctx = document["repaymentChart"].getContext("2d")
-        
-            # Dynamically adjust x-axis labels for interest data
-            interest_labels = list(range(1, max(len(interest_data1), len(interest_data2)) + 1))
-            principal_labels = list(range(1, max(len(principal_data1), len(principal_data2)) + 1))
-        
-            # Interest Graph
-            window.Chart.new(interest_ctx, {
-                "type": "line",
-                "data": {
-                    "labels": interest_labels,
-                    "datasets": [
-                        {
-                            "label": "Interest Over Time - Option 1",
-                            "data": interest_data1,
-                            "borderColor": "rgba(255, 99, 132, 1)",
-                            "fill": False
-                        },
-                        {
-                            "label": "Interest Over Time - Option 2",
-                            "data": interest_data2,
-                            "borderColor": "rgba(75, 192, 192, 1)",
-                            "fill": False
-                        }
-                    ]
-                },
-                "options": {
-                    "responsive": True,
-                    "scales": {
-                        "x": {
-                            "display": True,
-                            "title": {
-                                "display": True,
-                                "text": "Month"
-                            }
-                        },
-                        "y": {
-                            "display": True,
-                            "title": {
-                                "display": True,
-                                "text": "Interest"
-                            }
-                        }
-                    }
-                }
-            })
-        
-            # Principal Repayment Graph
-            window.Chart.new(principal_ctx, {
-                "type": "line",
-                "data": {
-                    "labels": principal_labels,
-                    "datasets": [
-                        {
-                            "label": "Principal Remaining - Option 1",
-                            "data": principal_data1,
-                            "borderColor": "rgba(54, 162, 235, 1)",
-                            "fill": False
-                        },
-                        {
-                            "label": "Principal Remaining - Option 2",
-                            "data": principal_data2,
-                            "borderColor": "rgba(255, 206, 86, 1)",
-                            "fill": False
-                        }
-                    ]
-                },
-                "options": {
-                    "responsive": True,
-                    "scales": {
-                        "x": {
-                            "display": True,
-                            "title": {
-                                "display": True,
-                                "text": "Month"
-                            }
-                        },
-                        "y": {
-                            "display": True,
-                            "title": {
-                                "display": True,
-                                "text": "Principal"
-                            }
-                        }
-                    }
-                }
-            })
-        
-        
-        
-        def validate_inputs():
-            try:
+                    # Option 1 - Validate Charges Format
+                    charges_format1 = parse_charges_format(document["charges_format1"].value)
+                    for (start_month, end_month) in charges_format1.keys():
+                        if start_month > tenure_months or end_month > tenure_months:
+                            alert("Error: Charges Format months for Option 1 exceed loan tenure.")
+                            return False
+                
+                    # Option 2 - Validate Charges Format
+                    charges_format2 = parse_charges_format(document["charges_format2"].value)
+                    for (start_month, end_month) in charges_format2.keys():
+                        if start_month > tenure_months or end_month > tenure_months:
+                            alert("Error: Charges Format months for Option 2 exceed loan tenure.")
+                            return False    
+    
+    
+                    return True
+                except ValueError:
+                    alert("Error: Please enter valid numerical values in all fields.")
+                    return False
+    
+                
+                
+                 # Define generate_monthly_table_with_prepayments function with necessary prepayment data consideration
+                
+                
+            def generate_table_with_emi_prepayments_penalties(principal_data1, principal_data2, interest_data1, interest_data2, emi1, emi2, prepayments1, prepayments2, penalties1, penalties2):
+                 """
+                 Generate an HTML table displaying EMI, prepayments, penalties, and remaining principal for both loan options.
+                 """
+                 max_display_months = max(len(principal_data1), len(principal_data2))
+             
+                 table_html = "<table border='1' style='width:100%; border-collapse:collapse;'>"
+                 table_html += """
+                     <thead>
+                         <tr>
+                             <th>Month</th>
+                             <th>EMI (Option 1)</th>
+                             <th>Interest (Option 1)</th>
+                             <th>Principal Remaining (Option 1)</th>
+                             <th>Prepayment (Option 1)</th>
+                             <th>Penalty (Option 1)</th>
+                             <th>EMI (Option 2)</th>
+                             <th>Interest (Option 2)</th>
+                             <th>Principal Remaining (Option 2)</th>
+                             <th>Prepayment (Option 2)</th>
+                             <th>Penalty (Option 2)</th>
+                         </tr>
+                     </thead>
+                     <tbody>
+                 """
+             
+                 for month in range(1, max_display_months + 1):
+                     principal_remaining1 = principal_data1[month - 1] if month <= len(principal_data1) else 0
+                     interest1 = interest_data1[month - 1] if month <= len(interest_data1) else 0
+                     prepayment1 = prepayments1.get(month, 0)
+                     penalty1 = next((penalty for m, penalty in penalties1 if m == month), 0)
+             
+                     principal_remaining2 = principal_data2[month - 1] if month <= len(principal_data2) else 0
+                     interest2 = interest_data2[month - 1] if month <= len(interest_data2) else 0
+                     prepayment2 = prepayments2.get(month, 0)
+                     penalty2 = next((penalty for m, penalty in penalties2 if m == month), 0)
+             
+                     prepayment1_display = f"{prepayment1:.2f}" if prepayment1 > 0 else "-"
+                     penalty1_display = f"{penalty1:.2f}" if penalty1 > 0 else "-"
+                     prepayment2_display = f"{prepayment2:.2f}" if prepayment2 > 0 else "-"
+                     penalty2_display = f"{penalty2:.2f}" if penalty2 > 0 else "-"
+             
+                     table_html += f"""
+                         <tr>
+                             <td>{month}</td>
+                             <td>{emi1:.2f}</td>
+                             <td>{interest1:.2f}</td>
+                             <td>{principal_remaining1:.2f}</td>
+                             <td>{prepayment1_display}</td>
+                             <td>{penalty1_display}</td>
+                             <td>{emi2:.2f}</td>
+                             <td>{interest2:.2f}</td>
+                             <td>{principal_remaining2:.2f}</td>
+                             <td>{prepayment2_display}</td>
+                             <td>{penalty2_display}</td>
+                         </tr>
+                     """
+             
+                 table_html += "</tbody></table>"
+                 return table_html
+                              
+    
+            def on_calculate(event):
+                if not validate_inputs():
+                    return
+    
                 principal = float(document["principal"].value)
                 tenure = int(document["tenure"].value)
-
-                # Option 1
-                prepayment_months1 = [int(month) for month in parse_prepayments(document["prepayments1"].value).keys()]
-                if any(month > (tenure * 12) for month in prepayment_months1):
-                    alert("Error: Prepayment months for Option 1 exceed loan tenure.")
-                    return False
-
-                # Option 2
-                prepayment_months2 = [int(month) for month in parse_prepayments(document["prepayments2"].value).keys()]
-                if any(month > (tenure * 12) for month in prepayment_months2):
-                    alert("Error: Prepayment months for Option 2 exceed loan tenure.")
-                    return False
-        
-                return True
-            except ValueError:
-                alert("Error: Please enter valid numerical values in all fields.")
-                return False
-
-                # Define generate_monthly_table_with_prepayments function with necessary prepayment data consideration
-            def generate_monthly_table_with_prepayments(emi_data1, emi_data2):
-                """
-                Generate an HTML table with EMI, interest, and principal details for both loan options.
-                """
-                table_html = "<table>"
-                table_html += """
-                    <thead>
-                        <tr>
-                            <th>Month</th>
-                            <th>EMI (Option 1)</th>
-                            <th>Interest (Option 1)</th>
-                            <th>Principal Remaining (Option 1)</th>
-                            <th>EMI (Option 2)</th>
-                            <th>Interest (Option 2)</th>
-                            <th>Principal Remaining (Option 2)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                """
-            
-                for month, (emi1, emi2) in enumerate(zip(emi_data1, emi_data2), start=1):
-                    table_html += f"""
-                        <tr>
-                            <td>{month}</td>
-                            <td>{emi1['emi']}</td>
-                            <td>{emi1['interest']}</td>
-                            <td>{emi1['principal_remaining']}</td>
-                            <td>{emi2['emi']}</td>
-                            <td>{emi2['interest']}</td>
-                            <td>{emi2['principal_remaining']}</td>
-                        </tr>
-                    """
-            
-                table_html += "</tbody></table>"
-                return table_html
-            
-
-        def on_calculate(event):
-            if not validate_inputs():
-                return
-
-            principal = float(document["principal"].value)
-            tenure = int(document["tenure"].value)
-            interest_rate1 = float(document["interest_rate1"].value)
-            interest_rate2 = float(document["interest_rate2"].value)
-
-            prepayments1 = parse_prepayments(document["prepayments1"].value)
-            prepayments2 = parse_prepayments(document["prepayments2"].value)
-
-            emi1 = calculate_emi(principal, interest_rate1, tenure)
-            emi2 = calculate_emi(principal, interest_rate2, tenure)
-
-           
-            total_interest1, interest_data1 = calculate_total_interest(principal, emi1, tenure, prepayments1)
-            total_interest2, interest_data2 = calculate_total_interest(principal, emi2, tenure, prepayments2)
-
-            principal_data1 = calculate_principal_repayment(principal, emi1, tenure, prepayments1)
-            principal_data2 = calculate_principal_repayment(principal, emi2, tenure, prepayments2)
-
-            # Update UI text
-            document["emi1"].text = f"EMI for Option 1: {emi1:.2f}"
-            document["interest1"].text = f"Total Interest for Option 1: {total_interest1:.2f}"
-            document["emi2"].text = f"EMI for Option 2: {emi2:.2f}"
-            document["interest2"].text = f"Total Interest for Option 2: {total_interest2:.2f}"
-            
-            
-            # Render both charts with both datasets
-            render_graphs(interest_data1, interest_data2, principal_data1, principal_data2)
-
-        document["calculateButton"].bind("click", on_calculate)
-    </script>
+                interest_rate1 = float(document["interest_rate1"].value)
+                interest_rate2 = float(document["interest_rate2"].value)
+                
+                charges1=parse_charges_format(document["charges_format1"].value)
+                charges2=parse_charges_format(document["charges_format2"].value) 
+                
+                prepayments1 = parse_prepayments(document["prepayments1"].value)
+                prepayments2 = parse_prepayments(document["prepayments2"].value)
+    
+                emi1 = calculate_emi(principal, interest_rate1, tenure)
+                emi2 = calculate_emi(principal, interest_rate2, tenure)
+    
+               
+                total_interest1, interest_data1 = calculate_total_interest(principal, emi1, tenure, prepayments1)
+                total_interest2, interest_data2 = calculate_total_interest(principal, emi2, tenure, prepayments2)
+    
+                principal_data1 = calculate_principal_repayment(principal, emi1, tenure, prepayments1)
+                principal_data2 = calculate_principal_repayment(principal, emi2, tenure, prepayments2)
+     
+                penalties1 = calculate_total_penalty(prepayments1, charges1)
+                penalties2 = calculate_total_penalty(prepayments2, charges2)
+                # Update UI text
+                document["emi1"].text = f"EMI for Option 1: {emi1:.2f}"
+                document["interest1"].text = f"Total Interest for Option 1: {total_interest1:.2f}"
+                document["emi2"].text = f"EMI for Option 2: {emi2:.2f}"
+                document["interest2"].text = f"Total Interest for Option 2: {total_interest2:.2f}"
+                penalty_html1 = ""
+                for month, penalty in penalties1:
+                    penalty_html1 += f"<p>Penalty for prepayment in month {month}: {penalty:.2f}</p>"
+    
+                penalty_html2 = ""
+                for month, penalty in penalties2:
+                    penalty_html2 += f"<p>Penalty for prepayment in month {month}: {penalty:.2f}</p>"
+    
+                document["penalty_list1"].innerHTML = penalty_html1
+                document["penalty_list2"].innerHTML = penalty_html2
+                # Generate and display the table
+                table_html = generate_table_with_emi_prepayments_penalties(
+                             principal_data1, principal_data2, interest_data1, interest_data2, 
+                             emi1, emi2, prepayments1, prepayments2, penalties1, penalties2)
+                document["table-container"].innerHTML = table_html
+                # Render both charts with both datasets
+                render_graphs(interest_data1, interest_data2, principal_data1, principal_data2)
+                  
+            document["calculateButton"].bind("click", on_calculate)
+        </script>
 </body>
 
 </html>
