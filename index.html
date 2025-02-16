@@ -41,7 +41,8 @@
         }
 
         .form-section input {
-            width: 100%;
+            width: 80%;
+            max-width: 400px;
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ccc;
@@ -80,53 +81,106 @@
             display: block;
             max-width: 100%;
         }
+
+        label {
+            color: #01172f; /* Blue */
+            font-weight: bold;
+        }
+
+               
     </style>
 </head>
 
 <body onload="brython()">
-    <h1>Loan Interest Calculator</h1>
+    
+    <h1 style="color: rgb(0, 153, 255); text-align: center; font-size: 28px;">
+        Personal Loan Comparison App
+    </h1>
+    <div id="genai-info" style="text-align: center; font-size: 14px; color: gray; margin-bottom: 20px;">
+        <p>This app was fully developed using GenAI for code.</p>
+        <p>Curious to know how? Read our blog article:  
+            <a href="https://productmagic.blogspot.com/2024/12/genai-for-code-insights-from-building.html" 
+               target="_blank" style="color: blue; text-decoration: underline;">
+                GenAI for Code: Insights from Building This App
+            </a>
+        </p>
+    </div>
+    
+    <p style="text-align: center; font-size: 16px; color: gray; max-width: 800px; margin: 0 auto;">
+        Compare two personal loan options by entering details such as principal amount, tenure, interest rates, and prepayment details.
+        This app helps you visualize the total interest paid, outstanding principal over time, and applicable penalties.
+    </p>
+    
     <div id="loanForm">
         <!-- General Section -->
         <div class="form-section" style="width: 100%;">
             <h3>General Information</h3>
-            <label for="principal">Principal Amount:</label>
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The loan amount you plan to borrow from the bank.</small>
+            <label for="principal">Principal Amount (Mandatory):</label>
             <input type="number" id="principal" step="0.01" placeholder="Enter principal amount">
-            <label for="tenure">Tenure (years):</label>
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The total duration of your loan in years.</small>
+            <label for="tenure">Tenure in years (Mandatory):</label>
             <input type="number" id="tenure" step="1" placeholder="Enter tenure in years">
+            
         </div>
 
         <!-- Option 1 -->
         <div class="form-section">
             <h3>Option 1</h3>
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">Annual interest rate charged by the bank.</small>
             <label for="interest_rate1">Interest Rate (%):</label>
             <input type="number" id="interest_rate1" step="0.01" placeholder="Enter interest rate">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The prepayments you tentatively plan to make and the month of payment.</small>
             <label for="prepayments1">Prepayments (month:amount, e.g., 12:1000,24:2000):</label>
             <input type="text" id="prepayments1" placeholder="Enter prepayment details">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">Prepayment charge applied by the bank, helps you know the additional fees apart from interest.</small>
             <label for="charges_format1">Charges Format (e.g., 13-24:3,25-120:2):</label>
             <input type="text" id="charges_format1" placeholder="Enter charges format">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The minimum amount you have to prepay as per the bank's rules.</small>
             <label for="min_part_payment1">Minimum Part Payment:</label>
             <input type="number" id="min_part_payment1" step="0.01" placeholder="Enter minimum part payment">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The maximum amount you can prepay as per the bank's rules.</small>
             <label for="max_part_payment1">Maximum Part Payment:</label>
             <input type="number" id="max_part_payment1" step="0.01" placeholder="Enter maximum part payment">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The earliest month from which prepayment is allowed.</small>
             <label for="min_prepayment_month1">Minimum Month for Prepayment:</label>
             <input type="number" id="min_prepayment_month1" step="1" placeholder="Enter minimum month for prepayment">
+            
         </div>
 
         <!-- Option 2 -->
         <div class="form-section">
             <h3>Option 2</h3>
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">Annual interest rate charged by the bank.</small>
             <label for="interest_rate2">Interest Rate (%):</label>
             <input type="number" id="interest_rate2" step="0.01" placeholder="Enter interest rate">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The prepayments you tentatively plan to make and the month of payment.</small>
             <label for="prepayments2">Prepayments (month:amount, e.g., 12:1000,24:2000):</label>
             <input type="text" id="prepayments2" placeholder="Enter prepayment details">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">Prepayment charge applied by the bank, helps you know the additional fees apart from interest.</small>
             <label for="charges_format2">Charges Format (e.g., 13-24:3,25-120:2):</label>
             <input type="text" id="charges_format2" placeholder="Enter charges format">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The minimum amount you have to prepay as per the bank's rules.</small>
             <label for="min_part_payment2">Minimum Part Payment:</label>
             <input type="number" id="min_part_payment2" step="0.01" placeholder="Enter minimum part payment">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The maximum amount you can prepay as per the bank's rules.</small>
             <label for="max_part_payment2">Maximum Part Payment:</label>
             <input type="number" id="max_part_payment2" step="0.01" placeholder="Enter maximum part payment">
+            
+            <small style="color: gray; font-size: 12px;max-width: 300px; overflow-wrap: break-word;display: block;">The earliest month from which prepayment is allowed.</small>
             <label for="min_prepayment_month2">Minimum Month for Prepayment:</label>
             <input type="number" id="min_prepayment_month2" step="1" placeholder="Enter minimum month for prepayment">
+            
         </div>
 
         <button id="calculateButton">Calculate</button>
